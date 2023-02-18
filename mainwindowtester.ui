@@ -349,6 +349,9 @@
        <layout class="QGridLayout" name="gridLayout_2" rowstretch="0,1,0,0,3,0,0,0,0,1,1,1,0">
         <item row="12" column="2" colspan="2">
          <widget class="QPushButton" name="pbAddCase">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
            <string>Добавить проверку</string>
           </property>
@@ -363,6 +366,9 @@
         </item>
         <item row="6" column="3">
          <widget class="QPushButton" name="pbRemoveCase">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
           <property name="text">
            <string>Удалить  последнюю проверку</string>
           </property>

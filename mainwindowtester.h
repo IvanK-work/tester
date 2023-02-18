@@ -32,6 +32,8 @@ public:
 
     void fill_data_from_settings();
 
+    void hide(bool yes);
+
 private slots:
     void on_pbAddTask_clicked();
 

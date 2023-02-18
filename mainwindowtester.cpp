@@ -12,8 +12,25 @@
 #include <QDir>
 #include <QMessageBox>
 
+void MainWindowTester::hide(bool yes)
+{
+    ui->pbAddCase->setHidden(yes);
+    ui->pbRemoveCase->setHidden(yes);
+    ui->tbTextTask->setHidden(yes);
+    ui->scrollArea->setHidden(yes);
+    ui->data_in->setHidden(yes);
+    ui->data_out->setHidden(yes);
+    ui->label->setHidden(yes);
+    ui->label_2->setHidden(yes);
+    ui->label_3->setHidden(yes);
+    ui->label_13->setHidden(yes);
+    ui->tbTextTask->setHidden(yes);
+}
+
 void MainWindowTester::fill_data_from_settings()
 {
+    hide(true);
+
     auto groups = settings->childGroups();
     for(const auto &t  : qAsConst(groups)){
         if(t == "general_settings"){
@@ -78,6 +95,7 @@ MainWindowTester::~MainWindowTester()
 
 void MainWindowTester::on_pbAddTask_clicked()
 {
+    hide(false);
     auto it = new QListWidgetItem("Новая задача");
     it->setFlags(it->flags() | Qt::ItemIsEditable);
     ui->listTests->addItem(it);
@@ -202,6 +220,7 @@ void MainWindowTester::on_pbRemoveCase_clicked()
 
 void MainWindowTester::on_listTests_itemClicked(QListWidgetItem *item)
 {
+    hide(false);
     static QListWidgetItem* prev_it=nullptr;
     if(prev_it == item)
         return;
@@ -420,8 +439,8 @@ void MainWindowTester::on_pbCheckTask_clicked()
                 ui->statusbar->showMessage("Не указан интерпретатор Python");
                 QMessageBox::StandardButton reply;
                 reply = QMessageBox::information(this, "Ошибка",
-                                              "Не указан путь до интерпретатора Python",
-                                              QMessageBox::Ok);
+                                                 "Не указан путь до интерпретатора Python",
+                                                 QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
@@ -431,28 +450,28 @@ void MainWindowTester::on_pbCheckTask_clicked()
                 ui->statusbar->showMessage("Не указан компилятор С/С++");
                 QMessageBox::StandardButton reply;
                 reply = QMessageBox::information(this, "Ошибка",
-                                              "Не указан путь до компилятора С/С++",
-                                              QMessageBox::Ok);
+                                                 "Не указан путь до компилятора С/С++",
+                                                 QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
-             QProcess *s = new QProcess(this);
-             bool testpas=true;
-             connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s,&testpas](int exitCode, QProcess::ExitStatus exitStatus){
+            QProcess *s = new QProcess(this);
+            bool testpas=true;
+            connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s,&testpas](int exitCode, QProcess::ExitStatus exitStatus){
                 auto r = s->readAllStandardError();
                 if(!r.isEmpty()){
                     ui->tbConsole->append("Ошибка компиляции: " + r);
                     testpas=false;
                 }
-             });
-             s->start(c,{file_task.fileName(),"-o",QDir::tempPath()+QDir::separator()+"a.out"});
-             if(!s->waitForFinished(10000)){
-                 ui->tbConsole->append("Ошибка компиляции: " + s->errorString());
-                 return;
-             }
-             if(!testpas)
-                 return;
-             compiler=QDir::tempPath()+QDir::separator()+"a.out";
+            });
+            s->start(c,{file_task.fileName(),"-o",QDir::tempPath()+QDir::separator()+"a.out"});
+            if(!s->waitForFinished(10000)){
+                ui->tbConsole->append("Ошибка компиляции: " + s->errorString());
+                return;
+            }
+            if(!testpas)
+                return;
+            compiler=QDir::tempPath()+QDir::separator()+"a.out";
         }else if(extension == ".pp") {
             compiler = pascal;
         }else{
@@ -481,7 +500,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
         }
     }
 
-bool testpass=true;
+    bool testpass=true;
 
     for(auto &i : cases.test_cases){
         ui->tbConsole->append("\n\n  <font color=\"Orange\">Начинаю проверять тест №" + QString::number(i.id)+ "</font>");
@@ -519,7 +538,7 @@ bool testpass=true;
             ui->tbConsole->append("Программа завершена\n\n");
             auto er = s->readAllStandardError();
             if(!er.isEmpty()){
-             testpass=false;
+                testpass=false;
                 ui->tbConsole->append("<font color=\"Red\">Тест №" + QString::number(i.id)
                                       + " Ошибка runtime error " + er+ "</font>");
             }
@@ -542,7 +561,7 @@ bool testpass=true;
                 delay=false;
             });
             while(delay)
-             QCoreApplication::processEvents(QEventLoop::AllEvents,5000);
+                QCoreApplication::processEvents(QEventLoop::AllEvents,5000);
 
         }
         s->deleteLater();
@@ -581,27 +600,27 @@ void copySettings( QSettings &dst, QSettings &src )
 }
 void MainWindowTester::on_pbExport_clicked()
 {
-      QString file= QFileDialog::getSaveFileName(this,"Укажите куда сохранить файл");
+    QString file= QFileDialog::getSaveFileName(this,"Укажите куда сохранить файл");
 
-      auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
-      new_set->clear();
-      copySettings(*new_set, *settings);
+    auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
+    new_set->clear();
+    copySettings(*new_set, *settings);
 
-      new_set->sync();
-      new_set->deleteLater();
+    new_set->sync();
+    new_set->deleteLater();
 }
 
 
 void MainWindowTester::on_pbImport_clicked()
 {
-      QString file= QFileDialog::getOpenFileName(this,"Укажите файл компилятора Pascal");
-      auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
+    QString file= QFileDialog::getOpenFileName(this,"Укажите файл компилятора Pascal");
+    auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
 
-      copySettings(*settings, *new_set);
-      ui->listCurrentTaskTest->clear();
-      ui->listTests->clear();
-      tasks.clear();
-      fill_data_from_settings();
+    copySettings(*settings, *new_set);
+    ui->listCurrentTaskTest->clear();
+    ui->listTests->clear();
+    tasks.clear();
+    fill_data_from_settings();
 }
 
 
@@ -609,8 +628,8 @@ void MainWindowTester::on_pb_about_clicked()
 {
     QMessageBox::StandardButton reply;
     reply = QMessageBox::information(this, "О программе",
-                                  "Программа для проверки задач по программированию\n Версия: " + QString(tester_VERSION)
+                                     "Программа для проверки задач по программированию\n Версия: " + QString(tester_VERSION)
                                      + "\n Email разработчика: ivan.ku.work@gmail.com",
-                                  QMessageBox::Ok);
+                                     QMessageBox::Ok);
 }
 
