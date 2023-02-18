@@ -343,6 +343,7 @@ void MainWindowTester::on_lePythonPath_textChanged(const QString &file)
     connect(s,&QProcess::errorOccurred,this,[this,s](QProcess::ProcessError error){
         ui->lblPythonVer->setText(s->errorString());
         ui->lblPythonVer->setStyleSheet("QLabel { color : red; }");
+        python.clear();
     });
     settings->setValue("general_settings/python",file);
 }
@@ -358,6 +359,7 @@ void MainWindowTester::on_lePascalPath_textChanged(const QString &file)
     });
     connect(s,&QProcess::errorOccurred,this,[this,s](QProcess::ProcessError error){
         ui->lblPascalVer->setText(s->errorString());
+        pascal.clear();
     });
     settings->setValue("general_settings/pascal",file);
 }
@@ -375,6 +377,7 @@ void MainWindowTester::on_leCpath_textChanged(const QString &file)
     connect(s,&QProcess::errorOccurred,this,[this,s](QProcess::ProcessError error){
         ui->lblCver->setText(s->errorString());
         ui->lblCver->setStyleSheet("QLabel { color : red; }");
+        c.clear();
     });
     settings->setValue("general_settings/c",file);
 }
@@ -529,8 +532,8 @@ bool testpass=true;
         });
 
         s->start(compiler,{file_task.fileName()});
-        QCoreApplication::processEvents(QEventLoop::AllEvents,5000);
-        if(!s->waitForFinished(5000)){
+        QCoreApplication::processEvents(QEventLoop::AllEvents,4000);
+        if(!s->waitForFinished(4000)){
             s->kill();
             ui->tbConsole->append("<font color=\"Red\">Тест №" + QString::number(i.id) + " Ошибка, слишком долго выполняется </font>");
         }else{
