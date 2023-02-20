@@ -12,6 +12,10 @@
 #include <QDir>
 #include <QMessageBox>
 
+
+#define STATUS_BAR_STYLE "QStatusBar{padding-left:8px;background:rgba(255,100,0,255);color:black;font-weight:bold;}"
+
+
 void MainWindowTester::hide(bool yes)
 {
     ui->pbAddCase->setHidden(yes);
@@ -84,6 +88,12 @@ MainWindowTester::MainWindowTester(QWidget *parent)
     ui->lePascalPath->setText(settings->value("general_settings/pascal").toString());
 
     fill_data_from_settings();
+    QTimer *r = new QTimer(this);
+    r->callOnTimeout([&](){
+        ui->statusbar->setStyleSheet("");
+        //ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
+    });
+    r->start(3000);
 }
 
 MainWindowTester::~MainWindowTester()
@@ -96,12 +106,13 @@ MainWindowTester::~MainWindowTester()
 void MainWindowTester::on_pbAddTask_clicked()
 {
     hide(false);
-    auto it = new QListWidgetItem("Новая задача");
+    auto it = new QListWidgetItem("");
     it->setFlags(it->flags() | Qt::ItemIsEditable);
     ui->listTests->addItem(it);
     it->setSelected(true);
-
+    ui->listTests->editItem(it);
     tasks.insert(it,{});
+    on_listTests_itemClicked(it);
 }
 
 
@@ -115,7 +126,6 @@ void MainWindowTester::on_listTests_itemChanged(QListWidgetItem *item)
     for(auto &i : keys_)
     {
         ui->listCurrentTaskTest->insertItem(row++,new QListWidgetItem(i->text()));
-
     }
     ini_save();
 }
@@ -126,10 +136,12 @@ void MainWindowTester::on_pbAddCase_clicked()
 
     if(ui->data_in->toPlainText().isEmpty()){
         ui->statusbar->showMessage("Входные данные пустые",3000);
+        ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
         return;
     }
     if(ui->data_out->toPlainText().isEmpty()){
         ui->statusbar->showMessage("Выходные данные пустые",3000);
+        ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
         return;
     }
 
@@ -139,12 +151,12 @@ void MainWindowTester::on_pbAddCase_clicked()
 
     auto in = ui->data_in->toPlainText();
     auto out = ui->data_out->toPlainText();
-    if(in.back() != '\n'){
-        in.append('\n');
-    }
-    if(out.back() != '\n'){
-        out.append('\n');
-    }
+//    if(in.back() != '\n'){
+//        in.append('\n');
+//    }
+//    if(out.back() != '\n'){
+//        out.append('\n');
+//    }
     tin->setPlainText(in);
     tout->setPlainText(out);
 
@@ -211,7 +223,8 @@ void MainWindowTester::on_pbRemoveCase_clicked()
         auto listSel = ui->listTests->selectedItems();
         if(!listSel.empty()){
             auto it = *listSel.begin();
-            tasks[it].test_cases.pop_back();
+            if(!tasks[it].test_cases.isEmpty())
+                tasks[it].test_cases.pop_back();
         }
     }
     ini_save();
@@ -295,6 +308,9 @@ void MainWindowTester::on_pbRemoveTask_clicked()
 void MainWindowTester::ini_save()
 {
     settings->clear();
+    settings->setValue("general_settings/python",python);
+    settings->setValue("general_settings/pascal",pascal);
+    settings->setValue("general_settings/c",c);
     for(  const auto &i : qAsConst(tasks)){
         if(i.name.isEmpty())
             continue;
@@ -365,6 +381,7 @@ void MainWindowTester::on_lePythonPath_textChanged(const QString &file)
         python.clear();
     });
     settings->setValue("general_settings/python",file);
+    settings->sync();
 }
 
 
@@ -381,6 +398,7 @@ void MainWindowTester::on_lePascalPath_textChanged(const QString &file)
         pascal.clear();
     });
     settings->setValue("general_settings/pascal",file);
+    settings->sync();
 }
 
 
@@ -399,24 +417,34 @@ void MainWindowTester::on_leCpath_textChanged(const QString &file)
         c.clear();
     });
     settings->setValue("general_settings/c",file);
+    settings->sync();
 }
 
+struct RAII_enbaledButton{
+    RAII_enbaledButton(QPushButton *b) : b_(b){b_->setEnabled(false);}
+    ~RAII_enbaledButton(){b_->setEnabled(true);}
+private:
+    QPushButton *b_;
+};
 
 void MainWindowTester::on_pbCheckTask_clicked()
 {
+    RAII_enbaledButton button_disable_state(ui->pbCheckTask);
     ui->tbConsole->clear();
     QString extension;
     auto source_code = ui->tbSourceCodeTask->toPlainText();
     if(source_code.isEmpty()){
+        ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
         ui->statusbar->showMessage("Исходный код задачи пуст",3000);
         return;
     }
     if(source_code.contains("#include")){
         extension=".cpp";
     }
-    else if(source_code.contains("begin") &&source_code.contains("end") && source_code.contains("program") && source_code.contains("var")){
-        extension=".pp";
-    }else{
+//    else if(source_code.contains("begin") &&source_code.contains("end") && source_code.contains("program") && source_code.contains("var")){
+//        extension=".pp";
+//    }
+    else{
         extension=".py";
     }
 
@@ -424,6 +452,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
 
     if(file_task.open(QIODevice::WriteOnly) == false){
         ui->statusbar->showMessage("Не могу создать временный файл в " + file_task.fileName() + " ошибка: " + file_task.errorString(),10000);
+        ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
     }
 
     file_task.write(ui->tbSourceCodeTask->toPlainText().toUtf8());
@@ -437,10 +466,11 @@ void MainWindowTester::on_pbCheckTask_clicked()
             compiler = python;
             if(compiler.isEmpty()){
                 ui->statusbar->showMessage("Не указан интерпретатор Python");
+                ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
                 QMessageBox::StandardButton reply;
-                reply = QMessageBox::information(this, "Ошибка",
-                                                 "Не указан путь до интерпретатора Python",
-                                                 QMessageBox::Ok);
+                QMessageBox::information(this, "Ошибка",
+                                         "Не указан путь до интерпретатора Python",
+                                         QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
@@ -448,10 +478,11 @@ void MainWindowTester::on_pbCheckTask_clicked()
             compiler = c;
             if(compiler.isEmpty()){
                 ui->statusbar->showMessage("Не указан компилятор С/С++");
+                ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
                 QMessageBox::StandardButton reply;
-                reply = QMessageBox::information(this, "Ошибка",
-                                                 "Не указан путь до компилятора С/С++",
-                                                 QMessageBox::Ok);
+                QMessageBox::information(this, "Ошибка",
+                                         "Не указан путь до компилятора С/С++",
+                                         QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
@@ -476,6 +507,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
             compiler = pascal;
         }else{
             ui->statusbar->showMessage("Не определен язык программирования",5000);
+            ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
             return;
         }
     }
@@ -486,6 +518,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
         auto t = ui->listCurrentTaskTest->selectedItems();
         if(t.empty()){
             ui->statusbar->showMessage("Не выбрана задача по которой нужно проверять ", 5000);
+            ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
             return;
         }
         auto task = *t.begin();
@@ -496,6 +529,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
         }
         if(cases.name.isEmpty()){
             ui->statusbar->showMessage("Неизвестная задача ", 5000);
+            ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
             return;
         }
     }
@@ -503,18 +537,19 @@ void MainWindowTester::on_pbCheckTask_clicked()
     bool testpass=true;
 
     for(auto &i : cases.test_cases){
-        ui->tbConsole->append("\n\n  <font color=\"Orange\">Начинаю проверять тест №" + QString::number(i.id)+ "</font>");
+        ui->tbConsole->append("");ui->tbConsole->append("");
+        ui->tbConsole->append("\n\n  <font color=\"Orange\">Начинаю проверять тест №" + QString::number(i.id) + "</font>");
         QProcess *s = new QProcess(this);
 
 
         connect(s,&QProcess::started,this,[this,i,s](){
-            ui->tbConsole->append("Программа запустилась, подаю на вход данные: \n" + i.in.toUtf8());
+            ui->tbConsole->append("<font color=\"Black\">Программа запустилась, подаю на вход данные: \n" + i.in.toUtf8() + "</font>");
             s->write(i.in.toUtf8()+'\n');
         });
 
 
         connect(s, &QProcess::readyRead,this,[this,i,s,&testpass](){
-            ui->tbConsole->append("Поступил ответ от программы ");
+            ui->tbConsole->append("<font color=\"Black\">Поступил ответ от программы "  "</font>");
             auto result = s->readAllStandardOutput();
             if(result.isEmpty()){
                 auto er = s->readAllStandardError();
@@ -522,12 +557,19 @@ void MainWindowTester::on_pbCheckTask_clicked()
                                       + " Ошибка runtime error " + er+ "</font>");
                 return;
             }
-            if(result == i.out || result == i.out + '\n'){
-                ui->tbConsole->append("<font color=\"Green\">Тест №" + QString::number(i.id) + " пройден\n</font>" );
+            if(result == i.out || result == i.out + '\n' || result == i.out + '\r' || result == i.out + "\r\n"){
+                ui->tbConsole->append("<font color=\"Green\">Тест №" + QString::number(i.id) + " пройден получен результат: \"" + result
+                                      + "\" ожидаемый результат: \"" + i.out + "\"</font>" );
             }else{
                 testpass=false;
-                ui->tbConsole->append("<font color=\"Red\">Тест №" + QString::number(i.id) + " Ошибка  получен результат " + result
-                                      + " ожидаемый результат " + i.out+ "</font>");
+                if(i.out.contains(result)){
+                    ui->tbConsole->append("<font color=\"Red\">Тест №" + QString::number(i.id) +
+                                          " Ошибка возможно в ответе или в проверочных данных лишний служебный символ  получен результат: \"" + result
+                                          + "\" ожидаемый результат: \"" + i.out+ "\"</font>");
+                }else{
+                    ui->tbConsole->append("<font color=\"Red\">Тест №" + QString::number(i.id) + " Ошибка  получен результат: \"" + result
+                                          + "\" ожидаемый результат: \"" + i.out+ "\"</font>");
+                }
             }
         });
 
@@ -535,7 +577,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
 
         connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s,i,&testpass]
                 (int exitCode, QProcess::ExitStatus exitStatus){
-            ui->tbConsole->append("Программа завершена\n\n");
+            ui->tbConsole->append("<font color=\"Black\">Программа завершена " "</font>");
             auto er = s->readAllStandardError();
             if(!er.isEmpty()){
                 testpass=false;
@@ -566,13 +608,12 @@ void MainWindowTester::on_pbCheckTask_clicked()
         }
         s->deleteLater();
     }
-
+ ui->tbConsole->append("");ui->tbConsole->append("");
     if(testpass){
         ui->tbConsole->append("<font color=\"Green\">Все тесты успешно пройдены</font>");
     }else{
         ui->tbConsole->append("<font color=\"Red\">Программа не прошла проверку</font>");
     }
-
     QTimer::singleShot(10,this,[&](){    ui->tbConsole->verticalScrollBar()->setValue(ui->tbConsole->verticalScrollBar()->maximum());});
 }
 
@@ -601,7 +642,8 @@ void copySettings( QSettings &dst, QSettings &src )
 void MainWindowTester::on_pbExport_clicked()
 {
     QString file= QFileDialog::getSaveFileName(this,"Укажите куда сохранить файл");
-
+    if(file.isEmpty())
+        return;
     auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
     new_set->clear();
     copySettings(*new_set, *settings);
@@ -613,13 +655,19 @@ void MainWindowTester::on_pbExport_clicked()
 
 void MainWindowTester::on_pbImport_clicked()
 {
-    QString file= QFileDialog::getOpenFileName(this,"Укажите файл компилятора Pascal");
+    QString file= QFileDialog::getOpenFileName(this,"Укажите файл, ранее экспортированный из этой программы");
+    if(file.isEmpty())
+        return;
     auto new_set = new QSettings(file,QSettings::Format::IniFormat,this);
 
-    copySettings(*settings, *new_set);
     ui->listCurrentTaskTest->clear();
     ui->listTests->clear();
     tasks.clear();
+    settings->clear();
+    copySettings(*settings, *new_set);
+    settings->setValue("general_settings/python",python);
+    settings->setValue("general_settings/pascal",pascal);
+    settings->setValue("general_settings/c",c);
     fill_data_from_settings();
 }
 
@@ -632,4 +680,3 @@ void MainWindowTester::on_pb_about_clicked()
                                      + "\n Email разработчика: ivan.ku.work@gmail.com",
                                      QMessageBox::Ok);
 }
-
