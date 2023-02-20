@@ -33,7 +33,7 @@
     <item row="0" column="0" colspan="2">
      <widget class="QTabWidget" name="tabWidget">
       <property name="currentIndex">
-       <number>0</number>
+       <number>2</number>
       </property>
       <widget class="QWidget" name="tab">
        <attribute name="title">
@@ -63,7 +63,7 @@
            <item row="2" column="0">
             <widget class="QLabel" name="label_9">
              <property name="text">
-              <string>C</string>
+              <string>C/C++</string>
              </property>
             </widget>
            </item>
@@ -268,7 +268,11 @@
          </spacer>
         </item>
         <item row="1" column="0" rowspan="6">
-         <widget class="QListWidget" name="listCurrentTaskTest"/>
+         <widget class="QListWidget" name="listCurrentTaskTest">
+          <property name="toolTip">
+           <string>Выделите задачу</string>
+          </property>
+         </widget>
         </item>
         <item row="6" column="3">
          <widget class="QPushButton" name="pbClearConsole">
@@ -328,6 +332,9 @@
         </item>
         <item row="5" column="1" colspan="3">
          <widget class="QTextBrowser" name="tbConsole">
+          <property name="toolTip">
+           <string>В консоли в ответах не выводятся спец. символы</string>
+          </property>
           <property name="readOnly">
            <bool>true</bool>
           </property>
@@ -455,6 +462,9 @@
         </item>
         <item row="9" column="3" rowspan="3">
          <widget class="QTextBrowser" name="data_out">
+          <property name="toolTip">
+           <string>Необходимо обращать внимание на лишние пробелы или переводы строк</string>
+          </property>
           <property name="readOnly">
            <bool>false</bool>
           </property>
@@ -462,6 +472,9 @@
         </item>
         <item row="12" column="0">
          <widget class="QPushButton" name="pbImport">
+          <property name="toolTip">
+           <string>Импорт ранее заполненных задач</string>
+          </property>
           <property name="text">
            <string>Импорт из файла</string>
           </property>
@@ -469,6 +482,12 @@
         </item>
         <item row="9" column="2" rowspan="3">
          <widget class="QTextBrowser" name="data_in">
+          <property name="toolTip">
+           <string>Необходимо обращать внимание на лишние пробелы или переводы строк</string>
+          </property>
+          <property name="toolTipDuration">
+           <number>-1</number>
+          </property>
           <property name="readOnly">
            <bool>false</bool>
           </property>
@@ -476,6 +495,9 @@
         </item>
         <item row="12" column="1">
          <widget class="QPushButton" name="pbExport">
+          <property name="toolTip">
+           <string>Экспорт всех заполненных задач в специальный файл, который можно импортиовать в эту программу на другом компьюетре</string>
+          </property>
           <property name="text">
            <string>Экспорт в файл</string>
           </property>
