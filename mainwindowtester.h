@@ -74,11 +74,21 @@ private slots:
 
     void on_pb_about_clicked();
 
+    void on_tbSourceCodeTask_textChanged();
+
+    void on_rbCpp_toggled(bool checked);
+
+    void on_rbPascal_toggled(bool checked);
+
+    void on_rbPy_toggled(bool checked);
+
 private:
     Ui::MainWindowTester *ui;
     QMap<QListWidgetItem*,task_info> tasks;
     QSettings *settings;
     QString python,c,pascal;
     void ini_save();
+    QString extension;
+
 };
 #endif // MAINWINDOWTESTER_H

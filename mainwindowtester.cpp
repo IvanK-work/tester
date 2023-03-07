@@ -102,7 +102,6 @@ MainWindowTester::~MainWindowTester()
     delete ui;
 }
 
-
 void MainWindowTester::on_pbAddTask_clicked()
 {
     hide(false);
@@ -114,7 +113,6 @@ void MainWindowTester::on_pbAddTask_clicked()
     tasks.insert(it,{});
     on_listTests_itemClicked(it);
 }
-
 
 void MainWindowTester::on_listTests_itemChanged(QListWidgetItem *item)
 {
@@ -129,7 +127,6 @@ void MainWindowTester::on_listTests_itemChanged(QListWidgetItem *item)
     }
     ini_save();
 }
-
 
 void MainWindowTester::on_pbAddCase_clicked()
 {
@@ -151,12 +148,12 @@ void MainWindowTester::on_pbAddCase_clicked()
 
     auto in = ui->data_in->toPlainText();
     auto out = ui->data_out->toPlainText();
-//    if(in.back() != '\n'){
-//        in.append('\n');
-//    }
-//    if(out.back() != '\n'){
-//        out.append('\n');
-//    }
+    //    if(in.back() != '\n'){
+    //        in.append('\n');
+    //    }
+    //    if(out.back() != '\n'){
+    //        out.append('\n');
+    //    }
     tin->setPlainText(in);
     tout->setPlainText(out);
 
@@ -229,7 +226,6 @@ void MainWindowTester::on_pbRemoveCase_clicked()
     }
     ini_save();
 }
-
 
 void MainWindowTester::on_listTests_itemClicked(QListWidgetItem *item)
 {
@@ -337,7 +333,6 @@ void MainWindowTester::ini_save()
     settings->sync();
 }
 
-
 void MainWindowTester::on_pbChoosePathPy_clicked()
 {
     QString file= QFileDialog::getOpenFileName(this,"Укажите файл интерпретатора Python");
@@ -351,20 +346,17 @@ void MainWindowTester::on_pbChoosePathPy_clicked()
     settings->setValue("general_settings/python",file);
 }
 
-
 void MainWindowTester::on_pbChoosePathPascal_clicked()
 {
     QString file= QFileDialog::getOpenFileName(this,"Укажите файл компилятора Pascal");
     ui->lePascalPath->setText(file);
 }
 
-
 void MainWindowTester::on_pbChoosePathC_clicked()
 {
     QString file= QFileDialog::getOpenFileName(this,"Укажите путь к компилятору Cи");
     ui->leCpath->setText(file);
 }
-
 
 void MainWindowTester::on_lePythonPath_textChanged(const QString &file)
 {
@@ -384,14 +376,17 @@ void MainWindowTester::on_lePythonPath_textChanged(const QString &file)
     settings->sync();
 }
 
-
 void MainWindowTester::on_lePascalPath_textChanged(const QString &file)
 {
     pascal=file;
     QProcess *s = new QProcess(this);
-    s->start(file,{"--version"});
+    s->start(file, {"?"});
     connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s](){
-        ui->lblPascalVer->setText(s->readAllStandardOutput() + s->readAllStandardError());
+        QString outText=s->readAllStandardOutput() + s->readAllStandardError();
+        int index =outText.indexOf("\nCompiling");
+        outText.remove(index,outText.size()-index);
+        ui->lblPascalVer->setText(outText);
+        ui->lblPascalVer->setStyleSheet("QLabel { color : green; }");
     });
     connect(s,&QProcess::errorOccurred,this,[this,s](QProcess::ProcessError error){
         ui->lblPascalVer->setText(s->errorString());
@@ -400,7 +395,6 @@ void MainWindowTester::on_lePascalPath_textChanged(const QString &file)
     settings->setValue("general_settings/pascal",file);
     settings->sync();
 }
-
 
 void MainWindowTester::on_leCpath_textChanged(const QString &file)
 {
@@ -431,24 +425,15 @@ void MainWindowTester::on_pbCheckTask_clicked()
 {
     RAII_enbaledButton button_disable_state(ui->pbCheckTask);
     ui->tbConsole->clear();
-    QString extension;
+
     auto source_code = ui->tbSourceCodeTask->toPlainText();
     if(source_code.isEmpty()){
         ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
         ui->statusbar->showMessage("Исходный код задачи пуст",3000);
         return;
     }
-    if(source_code.contains("#include")){
-        extension=".cpp";
-    }
-//    else if(source_code.contains("begin") &&source_code.contains("end") && source_code.contains("program") && source_code.contains("var")){
-//        extension=".pp";
-//    }
-    else{
-        extension=".py";
-    }
 
-    QFile file_task(QDir::tempPath()+QDir::separator()+"temptask"+extension);
+    QFile file_task(QDir::tempPath()+"/temptask"+extension);
 
     if(file_task.open(QIODevice::WriteOnly) == false){
         ui->statusbar->showMessage("Не могу создать временный файл в " + file_task.fileName() + " ошибка: " + file_task.errorString(),10000);
@@ -460,7 +445,6 @@ void MainWindowTester::on_pbCheckTask_clicked()
     file_task.close();
 
     QString compiler;
-
     {
         if(extension == ".py"){
             compiler = python;
@@ -468,9 +452,9 @@ void MainWindowTester::on_pbCheckTask_clicked()
                 ui->statusbar->showMessage("Не указан интерпретатор Python");
                 ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
                 QMessageBox::StandardButton reply;
-                QMessageBox::information(this, "Ошибка",
-                                         "Не указан путь до интерпретатора Python",
-                                         QMessageBox::Ok);
+                QMessageBox::warning(this, "Ошибка",
+                                     "Не указан путь до интерпретатора Python",
+                                     QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
@@ -480,9 +464,9 @@ void MainWindowTester::on_pbCheckTask_clicked()
                 ui->statusbar->showMessage("Не указан компилятор С/С++");
                 ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
                 QMessageBox::StandardButton reply;
-                QMessageBox::information(this, "Ошибка",
-                                         "Не указан путь до компилятора С/С++",
-                                         QMessageBox::Ok);
+                QMessageBox::warning(this, "Ошибка",
+                                     "Не указан путь до компилятора С/С++",
+                                     QMessageBox::Ok);
                 ui->tabWidget->setCurrentIndex(0);
                 return;
             }
@@ -503,8 +487,36 @@ void MainWindowTester::on_pbCheckTask_clicked()
             if(!testpas)
                 return;
             compiler=QDir::tempPath()+QDir::separator()+"a.out";
-        }else if(extension == ".pp") {
+
+        }else if(extension == ".pas") {
             compiler = pascal;
+            if(compiler.isEmpty()){
+                ui->statusbar->showMessage("Не указан компилятор Pascal");
+                ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
+                QMessageBox::StandardButton reply;
+                QMessageBox::warning(this, "Ошибка",
+                                     "Не указан путь до компилятора Pascal",
+                                     QMessageBox::Ok);
+                ui->tabWidget->setCurrentIndex(0);
+                return;
+            }
+            QProcess *s = new QProcess(this);
+            bool testpas=true;
+            connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s,&testpas](int exitCode, QProcess::ExitStatus exitStatus){
+                auto r = s->readAllStandardError();
+                if(!r.isEmpty()){
+                    ui->tbConsole->append("Ошибка компиляции: " + r);
+                    testpas=false;
+                }
+            });
+            s->start(pascal,{QFileInfo(file_task).absoluteFilePath()});
+            if(!s->waitForFinished(10000)){
+                ui->tbConsole->append("Ошибка компиляции: " + s->errorString());
+                return;
+            }
+            if(!testpas)
+                return;
+            compiler=QFileInfo(file_task).absolutePath()+QDir::separator()+"temptask.exe";
         }else{
             ui->statusbar->showMessage("Не определен язык программирования",5000);
             ui->statusbar->setStyleSheet(STATUS_BAR_STYLE);
@@ -541,12 +553,10 @@ void MainWindowTester::on_pbCheckTask_clicked()
         ui->tbConsole->append("\n\n  <font color=\"Orange\">Начинаю проверять тест №" + QString::number(i.id) + "</font>");
         QProcess *s = new QProcess(this);
 
-
         connect(s,&QProcess::started,this,[this,i,s](){
             ui->tbConsole->append("<font color=\"Black\">Программа запустилась, подаю на вход данные: \n" + i.in.toUtf8() + "</font>");
             s->write(i.in.toUtf8()+'\n');
         });
-
 
         connect(s, &QProcess::readyRead,this,[this,i,s,&testpass](){
             ui->tbConsole->append("<font color=\"Black\">Поступил ответ от программы "  "</font>");
@@ -572,8 +582,6 @@ void MainWindowTester::on_pbCheckTask_clicked()
                 }
             }
         });
-
-
 
         connect(s,static_cast<void (QProcess::*)(int,QProcess::ExitStatus)>(&QProcess::finished),this,[this,s,i,&testpass]
                 (int exitCode, QProcess::ExitStatus exitStatus){
@@ -608,7 +616,7 @@ void MainWindowTester::on_pbCheckTask_clicked()
         }
         s->deleteLater();
     }
- ui->tbConsole->append("");ui->tbConsole->append("");
+    ui->tbConsole->append("");ui->tbConsole->append("");
     if(testpass){
         ui->tbConsole->append("<font color=\"Green\">Все тесты успешно пройдены</font>");
     }else{
@@ -617,12 +625,10 @@ void MainWindowTester::on_pbCheckTask_clicked()
     QTimer::singleShot(10,this,[&](){    ui->tbConsole->verticalScrollBar()->setValue(ui->tbConsole->verticalScrollBar()->maximum());});
 }
 
-
 void MainWindowTester::on_pbClearConsole_clicked()
 {
     ui->tbConsole->clear();
 }
-
 
 void MainWindowTester::on_pbClearCode_clicked()
 {
@@ -639,6 +645,7 @@ void copySettings( QSettings &dst, QSettings &src )
         dst.setValue( *i, src.value( *i ) );
     }
 }
+
 void MainWindowTester::on_pbExport_clicked()
 {
     QString file= QFileDialog::getSaveFileName(this,"Укажите куда сохранить файл");
@@ -651,7 +658,6 @@ void MainWindowTester::on_pbExport_clicked()
     new_set->sync();
     new_set->deleteLater();
 }
-
 
 void MainWindowTester::on_pbImport_clicked()
 {
@@ -671,12 +677,48 @@ void MainWindowTester::on_pbImport_clicked()
     fill_data_from_settings();
 }
 
-
 void MainWindowTester::on_pb_about_clicked()
 {
-    QMessageBox::StandardButton reply;
-    reply = QMessageBox::information(this, "О программе",
+    QMessageBox::information(this, "О программе",
                                      "Программа для проверки задач по программированию\n Версия: " + QString(tester_VERSION)
                                      + "\n Email разработчика: ivan.ku.work@gmail.com",
                                      QMessageBox::Ok);
 }
+
+void MainWindowTester::on_tbSourceCodeTask_textChanged()
+{
+    auto source_code = ui->tbSourceCodeTask->toPlainText();
+
+    if(source_code.contains("#include")){
+        ui->rbCpp->setChecked(true);
+    }
+    else if(source_code.contains("begin") &&source_code.contains("end") && source_code.contains("var")){
+        ui->rbPascal->setChecked(true);
+    }
+    else{
+        ui->rbPy->setChecked(true);
+    }
+}
+
+void MainWindowTester::on_rbCpp_toggled(bool checked)
+{
+    if (checked) {
+        extension=".cpp";
+    }
+}
+
+void MainWindowTester::on_rbPascal_toggled(bool checked)
+{
+    if (checked) {
+        extension=".pas";
+    }
+}
+
+void MainWindowTester::on_rbPy_toggled(bool checked)
+{
+    if (checked) {
+        extension=".py";
+    }
+
+}
+
